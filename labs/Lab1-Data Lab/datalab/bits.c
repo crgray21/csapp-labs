@@ -140,7 +140,7 @@ NOTES:
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
-    return ~( ~x | ~y);
+    return ~( ~x | ~y );
 }
 /* 
  * getByte - Extract byte n from word x
@@ -151,11 +151,7 @@ int bitAnd(int x, int y) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-    int all_one = 0xFF;
-    int mask = all_one << (n * 8);
-    int target = x & mask;
-    target = (target >> (n * 8)) & all_one;
-    return target;
+    return x >> (n << 3) & 0xFF;
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -166,8 +162,9 @@ int getByte(int x, int n) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-    int tmp = 0x1;
-    return (x >> n) & ~(((tmp << 31) >> n) << 1);
+    init_shift = x >> n; 
+    bit_mask = (0x1 << 31) >> n;
+    return init_shift & bit_mask;
 }
 /*
  * bitCount - returns count of number of 1's in word
@@ -177,10 +174,10 @@ int logicalShift(int x, int n) {
  *   Rating: 4
  */
 int bitCount(int v) {
-    unsigned int c;                                     // store the total here
-    v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
-    v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
-    c = ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
+    unsigned int c;
+    v = v - ((v >> 1) & 0x55555555);
+    v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+    c = ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
     return c;
 }
 /* 
@@ -213,9 +210,9 @@ int tmin(void) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-     int isNeg = x >> 31;
-     int shift = n + (~0);
-     return (!(x >> shift) & (!isNeg)) | (!((~x) >> shift) & isNeg);
+    int isNeg = x >> 31;    // used with bang operator to check if negative
+    int shift = n + (~0);   // n - 1 --> need to offset by 1 to check boundary conditions
+    return (!(x >> shift) & (!isNeg)) | (!((~x) >> shift) & isNeg);
 }
 /* 
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
@@ -226,7 +223,6 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    // add (1 << n) - 1 only if x is negative
     return (x + ((x >> 31) & ((1 << n) + ~0))) >> n;
 }
 /* 
@@ -250,7 +246,7 @@ int isPositive(int x) {
     // x&(1<<31)  is to check if the number is negative.
     // !x         is to check if the number is zero.
     // A number is positive if it's not negative and not zero.
-    return !((x & (1 << 31)) >> 31 | !x);
+    return;
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -260,13 +256,7 @@ int isPositive(int x) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-    // int diff = x + (~y + 1); // x - y <= 0, return 1
-    // return !((y + (~x + 1)) & 0x80000000);
-    int diff_sgn = !(x >> 31) ^ !(y >> 31);       // is 1 when signs are different
-    int a = diff_sgn & (x >> 31);                 // diff signs and x is neg, gives 1
-    int b = !diff_sgn & !((y + (~x + 1)) >> 31);  // same signs and difference is pos or = 0, gives 1
-    int f = a | b;
-    return f;
+    return;
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
@@ -323,11 +313,6 @@ int ilog2(int x) {
  *   Rating: 2
  */
 unsigned float_neg(unsigned uf) {
-    int mask = (1 << 31);
-    if ((uf & (~mask)) > (0xFF << 23)) { // 0xFF << 23 = 0 11111111 000...000
-        return uf;
-    }
-    return uf ^ mask; // 0 ^ 1 = 1, 1 ^ 1 = 0
 }
 /* 
  * float_i2f - Return bit-level equivalent of expression (float) x
